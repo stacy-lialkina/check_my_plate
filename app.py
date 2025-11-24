@@ -7,12 +7,18 @@ from openai import OpenAI
 from PIL import Image
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'uploads'
+# Use /tmp on Vercel (writable) or 'uploads' locally
+app.config['UPLOAD_FOLDER'] = '/tmp' if os.path.exists('/tmp') else 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}
 
-# Create uploads directory if it doesn't exist
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+# Create uploads directory if it doesn't exist (only if not using /tmp)
+if app.config['UPLOAD_FOLDER'] != '/tmp':
+    try:
+        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    except OSError:
+        # If can't create, fallback to /tmp
+        app.config['UPLOAD_FOLDER'] = '/tmp'
 
 # Load CALORIE_DB from file
 def load_calorie_db():
